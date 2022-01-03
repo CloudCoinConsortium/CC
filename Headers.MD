@@ -3,7 +3,7 @@
 
 
 # ![#ff0](https://via.placeholder.com/15/ff0/000000?text=+) REQUESTS
-All requests to the RAIDA Bank have a Request Header and a Request Body. 
+All requests to the RAIDA have a Request Header and a Request Body. 
 
 The Request Header is not encrypted.  The Header has a fixed length of 22 bytes. 
 ### Header
