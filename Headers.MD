@@ -6,23 +6,19 @@
 All requests to the RAIDA have a Request Header and a Request Body. 
 
 The Request Header is not encrypted.  The Header has a fixed length of 22 bytes. 
-### Header
-
-Header Part | Bytes In That Part 
----|---
-Fixed Header Bytes | CL SP RI SH CM CM VE ID ID NO NO NO EC EC EN UD UD 
-Fixed Encryption Coins (will be all zeros if no encryption) | ID ID SN SN SN //Coin ID Code, Serial Number
+### 22 Byte Request Header Format: 
+CL SP RI SH CM CM VE ID ID NO NO NO EC EC EN UD UD ID ID SN SN SN
 
 ### Request Header Byte by Byte:
 
 index | Code | Name | Notes
 ---|---|---|---
 0 | CL | Cloud ID  |  Future Use. 0 for now.
-1 | SP | Split ID | Future Use. 0 for now.  
+1 | SP | Split ID | Future Use if coins split. 0 for now.  
 2 | RI | RAIDA ID  |  An integer between 0 and 24. Should match the RAIDA ID in the config file. 
 3 |SH | SHARD ID  |  An integer between 0 and 31. Should match one of the the Shard IDs in the config file. 
-4 |CM | Command | 0x00 //will be zero for all numbers below 255
-5 |CM | Command 2 | Will be the least significant number (This is the command number)
+4 |CM | Command byte 1 | 0x00 //will be zero for all numbers below 255
+5 |CM | Command byte 2 | Will be the least significant number (This is the command number)
 6 |VE | Command Version  | An integer that is zero but could be different as standards evolve.
 7 |ID  |  Coin ID 1 | Allows many coins to be on the same RAIDA. Including CloudCoin, NFTs and Identification coins. 
 8 |ID  |  Coin ID 2 | Least significant number
@@ -42,62 +38,42 @@ index | Code | Name | Notes
 * Note: Many bytes do two jobs. The SN will be the serial number of the coin to be encrypted and part of the nonce. 
 
 ### Command Codes
-Code| Command | Bytes per Coin | Completed
---- | --- | --- | ---
- 0 | POWN | 35 | ✔
- 1 | Detect | 19 | ✔
- 2 | Find | 35 | ✔
- 3 | Fix | 19 | 
- 4 | Echo | 0 | ✔
- 5 | Validate Ticket | N/A | ✔
- 6 | Upload Encryption Key | N/A |
- 7 | Seize Encryption Key | N/A |
- 8 | Identify | N/A | ✔
- 9 | Request Seizure | N/A |
- 10 | Recover (Phase 2) | 3|
- 11 | Get Ticket | 19 | ✔
- 15 | Version | N/A | ✔
- 16 | News | N/A | ✔
- 17 | Logs | N/A | ✔
- 19 | Report Lost | N/A | 
- 20 | ANG | 16 | 
- 21 | PANG | 16 |
- 22 | ANGPANG | 3 |
- 30 | Free ID | 
- 40 | Agent: Get Page | 
- 41 | Agent: Primary Status |
- 42 | Mirror: Become Primary |
- 43 | Mirror: Become Mirror | 
- 44 | Mirror: Check Updates  |
- 45 | Mirror: Report Changes  |
-100	 | Deposit |19 |✔
-102	 | Deposit PANG | |✔
-104 |	Withdraw |3 |✔
-108 |	Transfer|3 |✔
-110 |	Balance |0 |✔
-112 |	Show Registry |0 |✔
-114 |	Show Coins By Denomination|0 |
-115 |	Show Coins By Type |0 |
-116 |	Show Change|0 |
-120 |	Join|3 |✔
-121 |	Join in bank|3 |✔
-122 |	Break |3|✔
-123 |	Break in bank |3|✔
-130 |	Show Statments|0 |✔
-131 |	Delete ALL Statments|0 |
-132 |	Show Payment|0 |✔
-150 |	Sync Transfer Add| 3 |
-152 |	Sync Transfer Delete| 3 |
-154 |	Sync Transfer Respond| 0|✔
-160 |	Exchange Coin | 19 |
-200 | Test Create | N/A |
-202 | Create | 19 |
-204 | Read | 20 |
-208 | Delete | 35 |
-210 | Count | 19 |
-212 | Request Sync | N/A |
-214 | Sync Response | N/A |
-215 | Upgrade Coin | 3 |
+Code| Command | Description
+--- | --- 
+ 0 | POWN | Change ANs to PANs if authentic. 
+ 1 | Detect | Check if ANs are authentic. Do not change ANs.
+ 2 | Find | Check if AN or PAN from the last call is the AN in RAIDA
+ 3 | Fix | Fix A RAIDA who thinks the Coin is Counterfeit
+ 4 | Echo | See if the RAIDA is up and get response time. 
+ 5 | Validate Ticket | Check if Kerberos Ticket is authentic
+ 6 | Upload Encryption Key | Store a key meant for another RAIDA to use. 
+ 9 | Download Encryption Key | Get a Key that has been stored for the user.
+ 10 | Recover (Phase 2) | Recover lost passwords
+ 11 | Get Ticket | Get a Kerberos ticket that can be used to prove authenticy to other RAIDA
+ 15 | Version | The version of the RAIDA software
+ 19 | Report Lost (Phase II) | Allows user who lost coins to report this loss.
+ 30 | Free ID | Gives a coin that can be used as in ID to access software such as SkyVault. 
+100	 | Deposit | Put coins in a SkyVault account. 
+102	 | Deposit PANG | Put coins in a SkyVault account but generate PANs with a seed. 
+104 |	Withdraw | Remove coins from a SkyVault
+108 |	Transfer| Move coins to another SkyVault
+110 |	Balance | See the total coins in a SkyVault account. 
+114 |	Show Coins By Denomination| Show all the SNs of the coin in a SkyVault
+115 |	Show Coins By Type | See just coins with a certain type. 
+130 |	Show Statments| Show the transactions that have occured fro the SkyVault
+131 |	Delete ALL Statments| Delete all transaction records
+132 |	Show Payment| See if coins have arrived in the user's SkyVault
+150 |	Sync Transfer Add| Add coins to a SkyVault that are missing. 
+152 |	Sync Transfer Delete| Delete coins from a SkyVault that are orphans. 
+160 |	Exchange Coin (Phase II) | Change Bitcoin Connect coin to CC
+200 | NFT: Test Create  (Phase II)| N/A |
+202 | NFT: Create  (Phase II)| 19 |
+204 | NFT: Read (Phase II) | 20 |
+208 | NFT: Delete (Phase II) | 35 |
+210 | NFT: Count (Phase II) | 19 |
+212 | NFT: Request Sync (Phase II) | N/A |
+214 | NFT: Sync Response (Phase II) | N/A |
+215 | Upgrade Coin | Turn an Old coin into a New CC. 
 
 
 ### Coin IDs
@@ -105,41 +81,8 @@ Code| Command | Bytes per Coin | Completed
 Code| Meaning 
 --- | --- 
 00 00 00 00 00 | Identification Coins
-00 00 00 00 01 | CloudCoin
+00 00 00 00 01 | CC
 00 00 00 00 02 | NFT 
-
-#### Coin IDs Effect on Commands
-Command | ID 00 | CloudCoin 01
---- | --- | --- 
- POWN | Encrypt with ID coin. Authenticate and Pown in ID Table, | Encrypt with AN. Authenticate and Pown in AN Table
- Detect | Encrypt with ID coin. Authenticate and Detect in ID Table | Encrypt with AN. Authenticate and Pown in AN Table
- Find |  Encrypt with ID coin. Authenticate and Find in ID Table | Encrypt with AN. Authenticate and Find in AN Table
- Fix | Encrypt with ID coin. Authenticate and Fix in ID Table | Encrypt with AN. Authenticate and Fix in AN Table
- Validate Ticket |  Encrypt with ID coin.  | Encrypt with AN.
- Post Key |  Encrypt with ID coin.  | Encrypt with AN.
- Get Key | Encrypt with ID coin.  | Encrypt with AN.
- Identify | Encrypt with ID coin. Authenticate and Identify in ID Table | Encrypt with AN. Authenticate and Identify in AN Table
- Recover (Phase 2) |  Encrypt with ID coin. Authenticate and Recover in ID Table  | Encrypt with AN. Authenticate and Recover in AN Table 
- Get Ticket | Encrypt with ID coin. Authenticate and Get tickets based on ID Table | Encrypt with AN. Authenticate and Get tickets base on AN Table
- Version | should not be encrypted | should not be encrypted
- News |  should not be encrypted | should not be encrypted
- Logs | should not be encrypted | should not be encrypted
- Deposit | Encrypt with ID coin.  | Encrypt with AN.
-Withdraw | Encrypt with ID coin.  | Encrypt with AN.
-Transfer| Encrypt with ID coin.  | Encrypt with AN.
-Balance | Encrypt with ID coin.  | Encrypt with AN.
-Show Coins | Encrypt with ID coin.  | Encrypt with AN.
-Show By Type | Encrypt with ID coin.  | Encrypt with AN.
-Show Change | should not be encrypted | should not be encrypted
-Show By Denomination| Encrypt with ID coin.  | Encrypt with AN.
-Join | Encrypt with ID coin.  | Encrypt with AN.
-Break | Encrypt with ID coin.  | Encrypt with AN.
-Show Statments| Encrypt with ID coin.  | Encrypt with AN.
-Show Payment| Encrypt with ID coin.  | Encrypt with AN.
-Sync Transfer Add |  Encrypt with ID coin.  | Encrypt with AN.
-Sync Transfer Delete |  Encrypt with ID coin.  | Encrypt with AN.
-Sync Transfer Respond |  Encrypt with ID coin.  | Encrypt with AN.
-
 
 
 ### Encryption Codes [See Encryption](https://github.com/worthingtonse/RAIDAX/blob/main/Encryption.md)
@@ -180,7 +123,7 @@ Type Code | Name | Description
 # ![#0FF](https://via.placeholder.com/15/0ff/000000?text=+)  RESPONSE
 The response header is not encrypted.  The client must remember what order the coins were and the server must keep the order of the coins the same when responding.  
 
-### Header
+### 12 Byte Response Header Format: 
 ```
 RI SH SS EX UD UD EC EC HS HS HS HS
 ```
@@ -227,7 +170,7 @@ Invalid encryption code		 	  			     |   27
 coin owner id not found		 	  			     |   28
 Pown - AN and PAN are Same					      |   30
 Len Of body Cant Div in coins		      |   32
-Invalid end of request					          |   33
+End of request	Should have 0x3E 0x3E 				          |   33
 Empty request body						             |   36
 Validate - Ticket claimed earlier    |		 37
 Validate - Ticket claimed				        |   38
